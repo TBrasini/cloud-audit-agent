@@ -1,120 +1,244 @@
-# Cloud Audit Agent
+# \# Cloud Audit Agent
 
-Scanner de sécurité cloud (AWS) qui détecte des mauvaises configurations à partir de contrôles inspirés du **CIS AWS Foundations Benchmark**, puis génère un **rapport d'audit professionnel** rédigé par l'API Claude (Anthropic). Interface Streamlit incluse pour lancer un scan et consulter le rapport.
+# 
 
-## Pourquoi ce projet
+# 🔗 \*\*Live demo\*\*: https://cloud-audit-agent-j2appppfzs7un2cshsbyquck.streamlit.app/
 
-Auditeur IT de formation ingénieur, je voulais un projet qui me remette à niveau sur le cloud, le dev et l'IA générative appliquée — tout en restant dans mon domaine d'expertise : l'audit et la conformité. Ce projet reproduit, en miniature, un vrai flux d'audit : collecte des faits techniques → analyse contre un référentiel → rapport structuré avec recommandations priorisées.
+# 
 
-## Ce que ça démontre
+# AWS security scanner that detects misconfigurations using controls inspired by the \*\*CIS AWS Foundations Benchmark\*\*, then generates a \*\*professional audit report\*\* written by the Claude API (Anthropic). Includes a Streamlit interface to run a scan and review the report.
 
-- **Cloud / AWS** : lecture d'une infrastructure via `boto3` (IAM, S3, EC2, CloudTrail)
-- **Sécurité / audit** : contrôles alignés sur un référentiel reconnu (CIS Benchmark), sévérités, recommandations actionnables
-- **IA générative appliquée** : intégration de l'API Claude pour transformer des données brutes en rapport rédigé, avec un design robuste (fallback local si pas de clé API)
-- **Dev / ingénierie logicielle** : tests unitaires (`pytest` + `moto` pour mocker AWS), lint (`ruff`), CI (`GitHub Actions`), conteneurisation (`Docker`)
-- **Infra as Code** : environnement de démo `Terraform` volontairement mal configuré, pour tester le scanner de façon reproductible
+# 
 
-## Architecture
+# \## Why this project
 
-```
-scanner/   → contrôles de sécurité (checks.py) + orchestrateur (scan.py) + données mock
-report/    → génération du rapport d'audit via l'API Claude (avec fallback sans IA)
-app/       → interface Streamlit (scan + affichage + téléchargement du rapport)
-terraform/ → infra de démo intentionnellement vulnérable, pour tester le scanner
-tests/     → tests unitaires (checks AWS mockés avec moto, scan end-to-end)
-```
+# 
 
-Flux : `scan AWS (ou mock)` → `findings.json` → `Claude API` → `report.md` (+ vue Streamlit).
+# Trained as an engineer, I now work as an IT auditor. I wanted a project that would refresh my cloud, dev, and applied generative AI skills — while staying close to my domain of expertise: audit and compliance. This project reproduces, at a small scale, a real audit workflow: gathering technical facts → analyzing them against a reference framework → producing a structured report with prioritized recommendations.
 
-## Contrôles implémentés
+# 
 
-| ID | Contrôle | Sévérité |
-|---|---|---|
-| S3-01 | Bucket S3 sans Block Public Access complet | HIGH |
-| IAM-01 | Politique IAM avec `Action:*` / `Resource:*` | HIGH |
-| SG-01 / SG-02 | Security group ouvert à `0.0.0.0/0` (SSH, RDP, DB, ou tous ports) | HIGH |
-| EBS-01 | Volume EBS non chiffré | MEDIUM |
-| CT-01 / CT-02 / CT-03 | CloudTrail absent, non multi-région, ou sans validation d'intégrité | HIGH / MEDIUM / LOW |
-| ROOT-01 | MFA désactivé sur le compte root | HIGH |
+# \## What this demonstrates
 
-## Démarrage rapide (mode démo, sans compte AWS)
+# 
 
-```bash
-pip install -r requirements.txt
+# \- \*\*Cloud / AWS\*\*: reading infrastructure state via `boto3` (IAM, S3, EC2, CloudTrail)
 
-# Scan avec des données d'exemple, aucun credential requis
-python -m scanner.scan --mode mock --output findings.json
+# \- \*\*Security / audit\*\*: controls aligned with a recognized framework (CIS Benchmark), severities, actionable recommendations
 
-# Rapport (template local si pas de clé API, ou rédigé par Claude si ANTHROPIC_API_KEY est configurée)
-python -m report.generate_report --input findings.json --output report.md
+# \- \*\*Applied generative AI\*\*: integrating the Claude API to turn raw findings into a written report, with a resilient design (local fallback when no API key is set)
 
-# Interface web
-streamlit run app/app.py
-```
+# \- \*\*Software engineering\*\*: unit tests (`pytest` + `moto` to mock AWS), linting (`ruff`), CI (`GitHub Actions`), containerization (`Docker`)
 
-## Utilisation sur un vrai compte AWS
+# \- \*\*Infrastructure as Code\*\*: a `Terraform` demo environment intentionally misconfigured, to test the scanner in a reproducible way
 
-```bash
-cp .env.example .env   # renseigner ANTHROPIC_API_KEY, AWS_PROFILE, AWS_REGION
+# 
 
-python -m scanner.scan --mode aws --profile default --region eu-west-3 --output findings.json
-python -m report.generate_report --input findings.json --output report.md
-```
+# \## Architecture
 
-Permissions IAM en lecture seule nécessaires : `s3:ListAllMyBuckets`, `s3:GetBucketPublicAccessBlock`, `iam:ListPolicies`, `iam:GetPolicyVersion`, `iam:GetAccountSummary`, `ec2:DescribeSecurityGroups`, `ec2:DescribeVolumes`, `cloudtrail:DescribeTrails`.
+# 
 
-## Windows
+# ```
 
-Toutes les commandes ci-dessus fonctionnent sous Windows, avec ces équivalences :
+# scanner/   → security checks (checks.py) + orchestrator (scan.py) + mock data
 
-```powershell
-# Environnement virtuel
-python -m venv venv
-venv\Scripts\activate
+# report/    → audit report generation via the Claude API (with a non-AI fallback)
 
-# Copier le fichier d'exemple (CMD)
-copy .env.example .env
-# PowerShell : cp fonctionne aussi (alias de Copy-Item)
-```
+# app/       → Streamlit interface (scan + display + report download)
 
-Docker nécessite Docker Desktop ; Terraform nécessite `terraform.exe` dans le PATH. Le reste (pip, python, streamlit, pytest, ruff) est strictement identique.
+# terraform/ → intentionally vulnerable demo infrastructure, to test the scanner
 
-## Tester le scanner sur une infra volontairement vulnérable
+# tests/     → unit tests (AWS checks mocked with moto, end-to-end scan)
 
-Le dossier `terraform/` provisionne un bucket S3 public, un security group ouvert sur le port 22, et un volume EBS non chiffré — utile pour valider le scanner sur un compte AWS **sandbox jetable** (jamais en production).
+# ```
 
-```bash
-cd terraform
-terraform init
-terraform apply
-```
+# 
 
-## Docker
+# Flow: `AWS scan (or mock)` → `findings.json` → `Claude API` → `report.md` (+ Streamlit view).
 
-```bash
-docker build -t cloud-audit-agent .
-docker run -p 8501:8501 --env-file .env cloud-audit-agent
-```
+# 
 
-## Tests
+# \## Implemented controls
 
-```bash
-pip install -r requirements-dev.txt
-pytest -v
-ruff check .
-```
+# 
 
-## Stack technique
+# | ID | Control | Severity |
 
-Python · boto3 · Anthropic API (Claude) · Streamlit · pytest · moto · ruff · Docker · GitHub Actions · Terraform
+# |---|---|---|
 
-## Limites et pistes d'évolution
+# | S3-01 | S3 bucket without full Block Public Access | HIGH |
 
-- Couverture de contrôles volontairement réduite (6 familles) — extensible à d'autres services (RDS, KMS, VPC Flow Logs, etc.)
-- Pas de persistance des scans dans le temps (pas d'historique/diff entre deux audits)
-- Génération de rapport en Markdown uniquement — export PDF possible en ajout futur
-- Support Azure/GCP non implémenté (architecture des checks pensée pour être extensible dans ce sens)
+# | IAM-01 | IAM policy with `Action:\*` / `Resource:\*` | HIGH |
 
-## Licence
+# | SG-01 / SG-02 | Security group open to `0.0.0.0/0` (SSH, RDP, DB, or all ports) | HIGH |
 
-MIT — projet personnel à but de démonstration.
+# | EBS-01 | Unencrypted EBS volume | MEDIUM |
+
+# | CT-01 / CT-02 / CT-03 | CloudTrail missing, not multi-region, or without log file validation | HIGH / MEDIUM / LOW |
+
+# | ROOT-01 | MFA disabled on the root account | HIGH |
+
+# 
+
+# \## Quickstart (demo mode, no AWS account needed)
+
+# 
+
+# ```bash
+
+# pip install -r requirements.txt
+
+# 
+
+# \# Scan with sample data, no credentials required
+
+# python -m scanner.scan --mode mock --output findings.json
+
+# 
+
+# \# Report (local template if no API key, or written by Claude if ANTHROPIC\_API\_KEY is set)
+
+# python -m report.generate\_report --input findings.json --output report.md
+
+# 
+
+# \# Web interface
+
+# streamlit run app/app.py
+
+# ```
+
+# 
+
+# \## Using a real AWS account
+
+# 
+
+# ```bash
+
+# cp .env.example .env   # fill in ANTHROPIC\_API\_KEY, AWS\_PROFILE, AWS\_REGION
+
+# 
+
+# python -m scanner.scan --mode aws --profile default --region eu-west-3 --output findings.json
+
+# python -m report.generate\_report --input findings.json --output report.md
+
+# ```
+
+# 
+
+# Required read-only IAM permissions: `s3:ListAllMyBuckets`, `s3:GetBucketPublicAccessBlock`, `iam:ListPolicies`, `iam:GetPolicyVersion`, `iam:GetAccountSummary`, `ec2:DescribeSecurityGroups`, `ec2:DescribeVolumes`, `cloudtrail:DescribeTrails`.
+
+# 
+
+# \## Windows
+
+# 
+
+# All commands above work on Windows, with these equivalents:
+
+# 
+
+# ```powershell
+
+# \# Virtual environment
+
+# python -m venv venv
+
+# venv\\Scripts\\activate
+
+# 
+
+# \# Copy the example file (CMD)
+
+# copy .env.example .env
+
+# \# PowerShell: cp also works (alias for Copy-Item)
+
+# ```
+
+# 
+
+# Docker requires Docker Desktop; Terraform requires `terraform.exe` on the PATH. Everything else (pip, python, streamlit, pytest, ruff) is identical.
+
+# 
+
+# \## Testing the scanner against intentionally vulnerable infrastructure
+
+# 
+
+# The `terraform/` folder provisions a public S3 bucket, a security group open on port 22, and an unencrypted EBS volume — useful to validate the scanner on a \*\*disposable sandbox\*\* AWS account (never on production).
+
+# 
+
+# ```bash
+
+# cd terraform
+
+# terraform init
+
+# terraform apply
+
+# ```
+
+# 
+
+# \## Docker
+
+# 
+
+# ```bash
+
+# docker build -t cloud-audit-agent .
+
+# docker run -p 8501:8501 --env-file .env cloud-audit-agent
+
+# ```
+
+# 
+
+# \## Tests
+
+# 
+
+# ```bash
+
+# pip install -r requirements-dev.txt
+
+# pytest -v
+
+# ruff check .
+
+# ```
+
+# 
+
+# \## Tech stack
+
+# 
+
+# Python · boto3 · Anthropic API (Claude) · Streamlit · pytest · moto · ruff · Docker · GitHub Actions · Terraform
+
+# 
+
+# \## Limitations and roadmap
+
+# 
+
+# \- Coverage is intentionally limited (6 control families) — extensible to other services (RDS, KMS, VPC Flow Logs, etc.)
+
+# \- No persistence of scans over time (no history/diff between two audits)
+
+# \- Report generation is Markdown only — PDF export is a possible future addition
+
+# \- Azure/GCP support not implemented (the checks architecture is designed to be extensible in that direction)
+
+# 
+
+# \## License
+
+# 
+
+# MIT — personal project for demonstration purposes.
+
